@@ -16,10 +16,7 @@
      * @requires $window
      */
 
-    provider('$localStorage', function () {
-        this.namespace = '';
-        this.$get = _storageFactory('localStorage', this.namespace);
-    }).
+    factory('$localStorage', _storageFactory('localStorage')).
 
     /**
      * @ngdoc object
@@ -32,18 +29,24 @@
 
 
     function _storageFactory(storageType, namespace) {
+        console.log('storageType:', storageType);
         console.log('namespace:', namespace);
 
         return [
             '$rootScope',
             '$window',
             '$log',
+            '$injector',
 
             function(
                 $rootScope,
                 $window,
-                $log
+                $log,
+                $injector
             ){
+                var prefix = (namespace) ? ('ngStorage-' + namespace + '-') : 'ngStorage-';
+                var prefixLength = prefix.length;
+
                 // #9: Assign a placeholder object if Web Storage is unavailable to prevent breaking the entire AngularJS app
                 var webStorage = $window[storageType] || ($log.warn('This browser does not support Web Storage!'), {}),
                     $storage = {
@@ -60,6 +63,10 @@
                             }
 
                             return $storage.$default(items);
+                        },
+
+                        $namespace : function (namespace) {
+                            return $injector.invoke(_storageFactory(storageType, namespace));
                         }
                     },
                     _last$storage,
@@ -67,24 +74,26 @@
 
                 for (var i = 0, k; i < webStorage.length; i++) {
                     // #8, #10: `webStorage.key(i)` may be an empty string (or throw an exception in IE9 if `webStorage` is empty)
-                    (k = webStorage.key(i)) && 'ngStorage-' === k.slice(0, 10) && ($storage[k.slice(10)] = angular.fromJson(webStorage.getItem(k)));
+                    (k = webStorage.key(i)) && prefix === k.slice(0, prefixLength) && ($storage[k.slice(prefixLength)] = angular.fromJson(webStorage.getItem(k)));
                 }
 
                 _last$storage = angular.copy($storage);
 
                 $rootScope.$watch(function() {
+                    console.log('watching', storageType, 'namespace:', namespace);
+
                     _debounce || (_debounce = setTimeout(function() {
                         _debounce = null;
 
                         if (!angular.equals($storage, _last$storage)) {
                             angular.forEach($storage, function(v, k) {
-                                angular.isDefined(v) && '$' !== k[0] && webStorage.setItem('ngStorage-' + k, angular.toJson(v));
+                                angular.isDefined(v) && '$' !== k[0] && webStorage.setItem(prefix + k, angular.toJson(v));
 
                                 delete _last$storage[k];
                             });
 
                             for (var k in _last$storage) {
-                                webStorage.removeItem('ngStorage-' + k);
+                                webStorage.removeItem(prefix + k);
                             }
 
                             _last$storage = angular.copy($storage);
@@ -94,8 +103,8 @@
 
                 // #6: Use `$window.addEventListener` instead of `angular.element` to avoid the jQuery-specific `event.originalEvent`
                 'localStorage' === storageType && $window.addEventListener && $window.addEventListener('storage', function(event) {
-                    if ('ngStorage-' === event.key.slice(0, 10)) {
-                        event.newValue ? $storage[event.key.slice(10)] = angular.fromJson(event.newValue) : delete $storage[event.key.slice(10)];
+                    if (prefix === event.key.slice(0, prefixLength)) {
+                        event.newValue ? $storage[event.key.slice(prefixLength)] = angular.fromJson(event.newValue) : delete $storage[event.key.slice(prefixLength)];
 
                         _last$storage = angular.copy($storage);
 

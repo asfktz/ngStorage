@@ -29,9 +29,6 @@
 
 
     function _storageFactory(storageType, namespace) {
-        console.log('storageType:', storageType);
-        console.log('namespace:', namespace);
-
         return [
             '$rootScope',
             '$window',
@@ -80,8 +77,6 @@
                 _last$storage = angular.copy($storage);
 
                 $rootScope.$watch(function() {
-                    console.log('watching', storageType, 'namespace:', namespace);
-
                     _debounce || (_debounce = setTimeout(function() {
                         _debounce = null;
 

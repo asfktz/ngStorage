@@ -16,7 +16,10 @@
      * @requires $window
      */
 
-    factory('$localStorage', _storageFactory('localStorage')).
+    provider('$localStorage', function () {
+        this.namespace = '';
+        this.$get = _storageFactory('localStorage', this.namespace);
+    }).
 
     /**
      * @ngdoc object
@@ -27,7 +30,10 @@
 
     factory('$sessionStorage', _storageFactory('sessionStorage'));
 
-    function _storageFactory(storageType) {
+
+    function _storageFactory(storageType, namespace) {
+        console.log('namespace:', namespace);
+
         return [
             '$rootScope',
             '$window',

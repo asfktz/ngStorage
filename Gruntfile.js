@@ -16,7 +16,7 @@ module.exports = function(grunt) {
                     ]
                 },
 
-                frameworks: ['mocha'],
+                frameworks: ['jasmine'],
 
                 browsers: [
                     'Chrome',
@@ -24,7 +24,7 @@ module.exports = function(grunt) {
                     'Firefox'
                 ],
 
-                singleRun: true
+                singleRun: false
             }
         },
 
